@@ -63,10 +63,11 @@ func (c *Client) Listen() {
 
 func (c *Client) Write(msg *Message) {
 
-	c.Conn.Write([]byte(fmt.Sprintf("%s %s:%s\n",
+	fmt.Fprintf(c.Conn,
+		"%s %s:%s\n",
 		msg.Time.Format(time.RFC3339),
 		msg.Sender.Name,
-		msg.Content)))
+		msg.Content)
 }
 
 func (c *Client) Recv() {

@@ -18,7 +18,7 @@ func (server *ChatServer) reportStatus() {
 	for {
 		time.Sleep(10 * time.Second)
 		for _, room := range server.Rooms {
-			fmt.Printf("%s:%d", room.Name, len(room.Clients))
+			log.Printf("%s:%d", room.Name, len(room.Clients))
 		}
 	}
 
@@ -38,6 +38,7 @@ func (server *ChatServer) ListenAndServe() {
 		conn, err := listener.Accept()
 		if err != nil {
 			log.Println(err)
+			continue
 		}
 		go func(conn net.Conn, server *ChatServer) {
 			c := &Client{server, fmt.Sprintf("%s", conn.RemoteAddr()),
