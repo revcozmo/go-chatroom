@@ -18,6 +18,13 @@ type Room struct {
 	Quit    chan bool
 }
 
+func NewRoom(server *ChatServer, name string) *Room {
+
+	return &Room{server, name, make(map[string]*Client, 0),
+		make(chan *Message), make(chan bool)}
+
+}
+
 func (r *Room) Listen() {
 
 	log.Printf("Chatroom: %s opened", r.Name)
