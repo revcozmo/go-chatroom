@@ -8,14 +8,14 @@ import random
 def ss_listen(s):
     
     while True:
-        sleep(random.randint(30, 60))
+        sleep(random.random())
         s.send("NOR WORLD "+os.urandom(15).encode('hex')+'\n')
         data = s.recv(1024)
 
 jobs = []
 
 print "Connectting...",
-for x in xrange(2000):
+for x in xrange(223):
 
     ss = socket.socket()
     ss.connect(('localhost', 12345))

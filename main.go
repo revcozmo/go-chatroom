@@ -24,7 +24,7 @@ func main() {
 		pprof.StartCPUProfile(f)
 
 		go func() {
-			time.Sleep(60 * time.Second)
+			time.Sleep(2 * time.Minute)
 			pprof.StopCPUProfile()
 			log.Printf("Stoped profile")
 			os.Exit(0)
