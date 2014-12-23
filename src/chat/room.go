@@ -2,27 +2,24 @@
 package chat
 
 import (
-	"fmt"
+	"bytes"
+	"encoding/binary"
 	"log"
 )
-
-func kickName(msg *Message) string {
-	return fmt.Sprintf("%s", msg.Content)
-}
 
 type Room struct {
 	Server  *ChatServer
 	Name    string
 	Clients map[string]*Client
-	In      chan *Message
-	Quit    chan bool
+	In      chan []byte
 }
 
 func NewRoom(server *ChatServer, name string) *Room {
 
-	return &Room{server, name, make(map[string]*Client, 0),
-		make(chan *Message), make(chan bool)}
-
+	room := &Room{server, name, make(map[string]*Client, 0),
+		make(chan []byte, 256)}
+	go room.Listen()
+	return room
 }
 
 func (r *Room) Listen() {
@@ -31,41 +28,23 @@ func (r *Room) Listen() {
 	for {
 		select {
 		case msg := <-r.In:
-			switch msg.Command {
-			case QUIT:
-				delete(r.Clients, msg.Sender.Name)
-				go r.broadcast(msg)
-			case JOIN:
-				log.Printf("%s joined", msg.Sender.Name)
-				r.Clients[msg.Sender.Name] = msg.Sender
-				go r.broadcast(msg)
-			case KICK:
-				name := kickName(msg)
-				if _, ok := r.Clients[name]; ok {
-					delete(r.Clients, name)
-					go r.broadcast(msg)
-				}
-			case DISMISS:
-				// Blocking broadcasting...
-				r.broadcast(msg)
-				r.Quit <- true
+			cmd, _ := binary.Varint(msg)
+			switch cmd {
 			default:
-				go r.broadcast(msg)
+				r.broadcast(msg)
+			case JOIN:
+				data := bytes.SplitN(msg, []byte(" "), 3)
+				name := string(data[2])
+				if _, ok := r.Server.Clients[name]; ok {
+					r.Clients[name] = r.Server.Clients[name]
+					r.broadcast(msg)
+				}
 			}
-
-		case <-r.Quit:
-			delete(r.Server.Rooms, r.Name)
-			for k := range r.Clients {
-				delete(r.Clients, k)
-			}
-			log.Printf("Chatroom: %s closed", r.Name)
-			// Ok, Mission Completed
-			return
 		}
 	}
 }
 
-func (r *Room) broadcast(msg *Message) {
+func (r *Room) broadcast(msg []byte) {
 
 	for _, c := range r.Clients {
 		c.In <- msg

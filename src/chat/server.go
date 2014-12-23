@@ -11,6 +11,7 @@ import (
 type ChatServer struct {
 	Bind_to string
 	Rooms   map[string]*Room
+	Clients map[string]*Client
 }
 
 func (server *ChatServer) reportStatus() {
@@ -34,6 +35,7 @@ func (server *ChatServer) ListenAndServe() {
 	defer listener.Close()
 	go server.reportStatus()
 	// Main loop
+	server.Rooms["WORLD"] = NewRoom(server, "WORLD")
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
@@ -41,11 +43,11 @@ func (server *ChatServer) ListenAndServe() {
 			continue
 		}
 		go func(conn net.Conn, server *ChatServer) {
-			c := &Client{server, fmt.Sprintf("%s", conn.RemoteAddr()),
-				conn, make(map[string]*Room), make(chan *Message),
-				make(chan *Message), make(chan bool)}
+			c := NewClient(server, fmt.Sprintf("%s", conn.RemoteAddr()),
+				conn)
+			server.Clients[c.Name] = c
 			go c.Listen()
-			go c.Recv()
+			go c.RecvFromConn()
 		}(conn, server)
 	}
 

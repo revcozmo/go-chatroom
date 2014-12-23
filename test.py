@@ -3,23 +3,23 @@
 
 from gevent import socket, spawn, joinall,sleep
 import os
-
+import random
 
 def ss_listen(s):
     
     while True:
-        sleep(1)
-        s.send("hi "+os.urandom(15).encode('hex')+'\n')
-        s.recv(1024)
+        sleep(random.randint(30, 60))
+        s.send("NOR WORLD "+os.urandom(15).encode('hex')+'\n')
+        data = s.recv(1024)
 
 jobs = []
 
 print "Connectting...",
-for x in xrange(50):
+for x in xrange(2000):
 
     ss = socket.socket()
     ss.connect(('localhost', 12345))
-
+    ss.send("JOI WORLD %s:%d\n" % ss.getsockname())
     jobs.append(spawn(ss_listen, ss))
 
 print "Done"

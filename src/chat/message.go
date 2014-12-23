@@ -1,31 +1,13 @@
 // Package message provides ...
 package chat
 
-import (
-	"time"
-)
-
 const (
-	_ = iota
-	NORMAL
-	DISCONNECT
-	SETUP
-	QUIT
-	JOIN
-	DISMISS
-	PAUSE
-	KICK
+	NORMAL     = 39
+	DISCONNECT = 34
+	SETUP      = -42
+	QUIT       = -41
+	JOIN       = 37
+	PAUSE      = 40
+	KICK       = -38
+	CANCEL     = -34
 )
-
-type Message struct {
-	Sender   *Client
-	Receiver string
-	Command  int
-	Content  []byte
-	Time     time.Time
-}
-
-func NewMessage(sender *Client, receiver string, command int,
-	content []byte) *Message {
-	return &Message{sender, receiver, command, content, time.Now()}
-}
