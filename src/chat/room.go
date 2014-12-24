@@ -2,49 +2,44 @@
 package chat
 
 import (
-	"bytes"
-	"encoding/binary"
 	"log"
 )
 
 type Room struct {
-	Server  *ChatServer
-	Name    string
-	Clients map[string]*Client
-	In      chan []byte
+	Id         uint32
+	Clients    map[uint32]*Client
+	In         chan Message
+	Register   chan *Client
+	UnRegister chan *Client
 }
 
-func NewRoom(server *ChatServer, name string) *Room {
+func NewRoom(id uint32) *Room {
 
-	room := &Room{server, name, make(map[string]*Client, 0),
-		make(chan []byte, 256)}
+	room := &Room{id, make(map[uint32]*Client, 0),
+		make(chan Message),
+		make(chan *Client),
+		make(chan *Client),
+	}
 	go room.Listen()
 	return room
 }
 
 func (r *Room) Listen() {
 
-	log.Printf("Chatroom: %s opened", r.Name)
+	log.Printf("Chatroom: %d opened", r.Id)
 	for {
 		select {
 		case msg := <-r.In:
-			cmd, _ := binary.Varint(msg)
-			switch cmd {
-			default:
-				r.broadcast(msg)
-			case JOIN:
-				data := bytes.SplitN(msg, []byte(" "), 3)
-				name := string(data[2])
-				if _, ok := r.Server.Clients[name]; ok {
-					r.Clients[name] = r.Server.Clients[name]
-					r.broadcast(msg)
-				}
-			}
+			r.broadcast(msg)
+		case c := <-r.Register:
+			r.Clients[c.Id] = c
+		case c := <-r.UnRegister:
+			delete(r.Clients, c.Id)
 		}
 	}
 }
 
-func (r *Room) broadcast(msg []byte) {
+func (r *Room) broadcast(msg Message) {
 
 	for _, c := range r.Clients {
 		c.In <- msg

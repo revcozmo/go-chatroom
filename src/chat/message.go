@@ -1,13 +1,45 @@
 // Package message provides ...
 package chat
 
-const (
-	NORMAL     = 39
-	DISCONNECT = 34
-	SETUP      = -42
-	QUIT       = -41
-	JOIN       = 37
-	PAUSE      = 40
-	KICK       = -38
-	CANCEL     = -34
+import (
+	"bytes"
+	"encoding/binary"
+	"log"
 )
+
+const (
+	_ = iota
+	NORMAL
+	DISCONNECT
+	SETUP
+	QUIT
+	JOIN
+	PAUSE
+	KICK
+	CANCEL
+)
+
+type MessageHeader struct {
+	Command uint32
+	RoomId  uint32
+}
+
+type Message struct {
+	Command uint32
+	RoomId  uint32
+	Content []byte
+}
+
+func NewMessage(line []byte) Message {
+	var header MessageHeader
+
+	err := binary.Read(bytes.NewBuffer(line[:8]),
+		binary.LittleEndian,
+		&header)
+
+	if err != nil {
+		log.Printf("send invalied msg:%v", err)
+	}
+	msg := Message{header.Command, header.RoomId, line[8:]}
+	return msg
+}

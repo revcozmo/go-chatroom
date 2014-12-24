@@ -3,32 +3,29 @@ package chat
 
 import (
 	"bufio"
-	"bytes"
-	"encoding/binary"
 	"log"
 	"net"
 )
 
 type Client struct {
 	Server *ChatServer
-	Name   string
+	Id     uint32
 	Conn   net.Conn
-	Rooms  map[string]*Room
-	In     chan []byte
+	Rooms  map[uint32]*Room
+	In     chan Message
 	Out    chan []byte
 }
 
-func NewClient(ser *ChatServer, name string, conn net.Conn) *Client {
-	return &Client{ser,
-		name,
+func NewClient(server *ChatServer, id uint32, conn net.Conn) *Client {
+	return &Client{server, id,
 		conn,
-		make(map[string]*Room),
-		make(chan []byte, 255),
+		make(map[uint32]*Room),
+		make(chan Message, 255),
 		make(chan []byte, 255)}
 }
 
 func (c *Client) Listen() {
-	log.Printf("New client: %s", c.Name)
+	log.Printf("New client: %d", c.Id)
 	for {
 		select {
 		case msg := <-c.In:
@@ -40,31 +37,26 @@ func (c *Client) Listen() {
 	}
 }
 
-func (c *Client) Write(msg []byte) {
-	c.Conn.Write(msg)
+func (c *Client) Write(msg Message) {
+
+	c.Conn.Write(msg.Content)
 }
 
-func (c *Client) ParseAndSend(msg []byte) {
+func (c *Client) ParseAndSend(line []byte) {
 
-	spliter := []byte(" ")
+	msg := NewMessage(line)
 
-	data := bytes.SplitN(msg, spliter, 3)
-	if len(data) != 3 {
-		log.Printf(c.Name, "send invalied msg")
-		return
-	}
-	cmd, _ := binary.Varint(data[0])
-	receiver := string(data[1])
-
-	switch cmd {
+	switch msg.Command {
+	case SETUP:
+		c.Server.NewRoom <- msg.RoomId
+	case CANCEL:
+		c.Server.CancelRoom <- msg.RoomId
 	case JOIN:
-		c.Rooms[receiver] = c.Server.Rooms[receiver]
-		c.Rooms[receiver].In <- msg
-
-	default:
-		if _, ok := c.Rooms[receiver]; ok {
-			c.Rooms[receiver].In <- msg
-		}
+		c.Server.JoinRoom <- *&JQMessage{msg.RoomId, c}
+	case QUIT:
+		c.Server.QuitRoom <- *&JQMessage{msg.RoomId, c}
+	case NORMAL:
+		c.Server.In <- msg
 	}
 
 }

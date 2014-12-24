@@ -2,27 +2,64 @@
 package chat
 
 import (
-	"fmt"
 	"log"
+	"math/rand"
 	"net"
-	"time"
 )
 
 type ChatServer struct {
-	Bind_to string
-	Rooms   map[string]*Room
-	Clients map[string]*Client
+	Bind_to    string
+	Rooms      map[uint32]*Room
+	NewRoom    chan uint32
+	CancelRoom chan uint32
+	JoinRoom   chan JQMessage
+	QuitRoom   chan JQMessage
+	In         chan Message
 }
 
-func (server *ChatServer) reportStatus() {
+type JQMessage struct {
+	RoomId uint32
+	Client *Client
+}
+
+func NewChatServer(bind_to string) *ChatServer {
+
+	return &ChatServer{
+		bind_to,
+		make(map[uint32]*Room),
+		make(chan uint32),
+		make(chan uint32),
+		make(chan JQMessage),
+		make(chan JQMessage),
+		make(chan Message, 1024),
+	}
+}
+
+func (server *ChatServer) HandleMessage() {
+
+	log.Printf("Start handle Message...")
 
 	for {
-		time.Sleep(10 * time.Second)
-		for _, room := range server.Rooms {
-			log.Printf("%s:%d", room.Name, len(room.Clients))
+		select {
+		case rid := <-server.NewRoom:
+			server.Rooms[rid] = NewRoom(rid)
+		case rid := <-server.CancelRoom:
+			delete(server.Rooms, rid)
+
+		case msg := <-server.JoinRoom:
+			if _, ok := server.Rooms[msg.RoomId]; ok {
+				server.Rooms[msg.RoomId].Register <- msg.Client
+			}
+		case msg := <-server.QuitRoom:
+			if _, ok := server.Rooms[msg.RoomId]; ok {
+				server.Rooms[msg.RoomId].UnRegister <- msg.Client
+			}
+		case msg := <-server.In:
+			if _, ok := server.Rooms[msg.RoomId]; ok {
+				server.Rooms[msg.RoomId].In <- msg
+			}
 		}
 	}
-
 }
 
 func (server *ChatServer) ListenAndServe() {
@@ -33,22 +70,19 @@ func (server *ChatServer) ListenAndServe() {
 		log.Fatal(err)
 	}
 	defer listener.Close()
-	go server.reportStatus()
+	go server.HandleMessage()
+
 	// Main loop
-	server.Rooms["WORLD"] = NewRoom(server, "WORLD")
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
 			log.Println(err)
 			continue
 		}
-		go func(conn net.Conn, server *ChatServer) {
-			c := NewClient(server, fmt.Sprintf("%s", conn.RemoteAddr()),
-				conn)
-			server.Clients[c.Name] = c
+		go func() {
+			c := NewClient(server, rand.Uint32(), conn)
 			go c.Listen()
 			go c.RecvFromConn()
-		}(conn, server)
+		}()
 	}
-
 }

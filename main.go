@@ -31,6 +31,6 @@ func main() {
 		}()
 	}
 
-	server := &chat.ChatServer{":12345", make(map[string]*chat.Room), make(map[string]*chat.Client)}
+	server := chat.NewChatServer(":12345")
 	server.ListenAndServe()
 }
