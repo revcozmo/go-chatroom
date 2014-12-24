@@ -1,12 +1,6 @@
 // Package message provides ...
 package chat
 
-import (
-	"bytes"
-	"encoding/binary"
-	"log"
-)
-
 const (
 	_ = iota
 	NORMAL
@@ -19,27 +13,19 @@ const (
 	CANCEL
 )
 
-type MessageHeader struct {
-	Command uint32
-	RoomId  uint32
-}
-
 type Message struct {
 	Command uint32
 	RoomId  uint32
 	Content []byte
 }
 
+func toLittleUint32(b []byte) uint32 {
+	return uint32(b[0]) | uint32(b[1])<<8 | uint32(b[2])<<16 | uint32(b[3]<<24)
+}
+
 func NewMessage(line []byte) Message {
-	var header MessageHeader
 
-	err := binary.Read(bytes.NewBuffer(line[:8]),
-		binary.LittleEndian,
-		&header)
-
-	if err != nil {
-		log.Printf("send invalied msg:%v", err)
-	}
-	msg := Message{header.Command, header.RoomId, line[8:]}
-	return msg
+	return Message{toLittleUint32(line[:4]),
+		toLittleUint32(line[4:8]),
+		line[8:]}
 }

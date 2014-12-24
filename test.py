@@ -2,18 +2,17 @@
 # encoding: utf-8
 
 from gevent import socket, spawn, joinall,sleep
-import os
 import sys
 import random
 import struct
 
 def ss_listen(s):
-    
     while True:
-        sleep(random.random()*120)
+        sleep(random.random()*3)
+        """
         msg = os.urandom(15).encode('hex')
         s.send(struct.pack('<ii', 1, 0)+msg+'\n')
-
+        """
 def ss_recv(s):
     while True:
         data = s.recv(1024)
@@ -28,7 +27,7 @@ ss.connect(('localhost', 12345))
 ss.send(struct.pack("<ii", 3, 0)+"a\n")
 sleep(1)
 print "Connectting...",
-for x in xrange(30):
+for x in xrange(10000):
 
     ss = socket.socket()
     ss.connect(('localhost', 12345))

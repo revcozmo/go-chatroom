@@ -31,7 +31,7 @@ func NewChatServer(bind_to string) *ChatServer {
 		make(chan uint32),
 		make(chan JQMessage),
 		make(chan JQMessage),
-		make(chan Message, 1024),
+		make(chan Message),
 	}
 }
 
@@ -56,7 +56,7 @@ func (server *ChatServer) HandleMessage() {
 			}
 		case msg := <-server.In:
 			if _, ok := server.Rooms[msg.RoomId]; ok {
-				go func() { server.Rooms[msg.RoomId].In <- msg }()
+				server.Rooms[msg.RoomId].In <- msg
 			}
 		}
 	}

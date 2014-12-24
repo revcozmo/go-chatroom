@@ -30,7 +30,7 @@ func (r *Room) Listen() {
 	for {
 		select {
 		case msg := <-r.In:
-			r.broadcast(msg)
+			go r.broadcast(msg)
 		case c := <-r.Register:
 			r.Clients[c.Id] = c
 		case c := <-r.UnRegister:

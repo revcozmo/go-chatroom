@@ -20,8 +20,8 @@ func NewClient(server *ChatServer, id uint32, conn net.Conn) *Client {
 	return &Client{server, id,
 		conn,
 		make(map[uint32]*Room),
-		make(chan Message, 255),
-		make(chan []byte, 255)}
+		make(chan Message),
+		make(chan []byte)}
 }
 
 func (c *Client) Listen() {
