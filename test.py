@@ -28,7 +28,7 @@ ss.connect(('localhost', 12345))
 ss.send(struct.pack("<ii", 3, 0)+"a\n")
 sleep(1)
 print "Connectting...",
-for x in xrange(3000):
+for x in xrange(30):
 
     ss = socket.socket()
     ss.connect(('localhost', 12345))

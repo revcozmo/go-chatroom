@@ -30,9 +30,9 @@ func (c *Client) Listen() {
 		select {
 		case msg := <-c.In:
 			// Client receive message
-			go c.Write(msg)
+			c.Write(msg)
 		case msg := <-c.Out:
-			go c.ParseAndSend(msg)
+			c.ParseAndSend(msg)
 		}
 	}
 }

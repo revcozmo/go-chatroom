@@ -56,7 +56,7 @@ func (server *ChatServer) HandleMessage() {
 			}
 		case msg := <-server.In:
 			if _, ok := server.Rooms[msg.RoomId]; ok {
-				server.Rooms[msg.RoomId].In <- msg
+				go func() { server.Rooms[msg.RoomId].In <- msg }()
 			}
 		}
 	}
