@@ -1,6 +1,10 @@
 // Package message provides ...
 package chat
 
+import (
+	"bytes"
+)
+
 const (
 	_ = iota
 	NORMAL
@@ -14,9 +18,14 @@ const (
 )
 
 type Message struct {
-	Command uint32
-	RoomId  uint32
-	Content []byte
+	Command  uint32
+	RoomName string
+	Content  []byte
+}
+
+type RoomMessage struct {
+	Name   string
+	Client *Client
 }
 
 func toLittleUint32(b []byte) uint32 {
@@ -25,7 +34,9 @@ func toLittleUint32(b []byte) uint32 {
 
 func NewMessage(line []byte) Message {
 
+	spliter := []byte(" ")
+	data := bytes.SplitN(line, spliter, 2)
 	return Message{toLittleUint32(line[:4]),
-		toLittleUint32(line[4:8]),
-		line[8:]}
+		string(data[0]),
+		data[1]}
 }

@@ -8,33 +8,18 @@ import (
 )
 
 type Client struct {
-	Server *ChatServer
-	Id     uint32
-	Conn   net.Conn
-	Rooms  map[uint32]*Room
-	In     chan Message
-	Out    chan []byte
+	Hub  *Hub
+	Name string
+	Conn net.Conn
+
+	In chan Message
 }
 
-func NewClient(server *ChatServer, id uint32, conn net.Conn) *Client {
-	return &Client{server, id,
+func NewClient(h *Hub, name string, conn net.Conn) *Client {
+	return &Client{h,
+		name,
 		conn,
-		make(map[uint32]*Room),
-		make(chan Message),
-		make(chan []byte)}
-}
-
-func (c *Client) Listen() {
-	log.Printf("New client: %d", c.Id)
-	for {
-		select {
-		case msg := <-c.In:
-			// Client receive message
-			c.Write(msg)
-		case msg := <-c.Out:
-			c.ParseAndSend(msg)
-		}
-	}
+		make(chan Message)}
 }
 
 func (c *Client) Write(msg Message) {
@@ -47,16 +32,8 @@ func (c *Client) ParseAndSend(line []byte) {
 	msg := NewMessage(line)
 
 	switch msg.Command {
-	case SETUP:
-		c.Server.NewRoom <- msg.RoomId
-	case CANCEL:
-		c.Server.CancelRoom <- msg.RoomId
-	case JOIN:
-		c.Server.JoinRoom <- *&JQMessage{msg.RoomId, c}
-	case QUIT:
-		c.Server.QuitRoom <- *&JQMessage{msg.RoomId, c}
 	case NORMAL:
-		c.Server.In <- msg
+		c.Hub.Normal <- msg
 	}
 
 }
@@ -67,10 +44,17 @@ func (c *Client) RecvFromConn() {
 	scanner.Split(bufio.ScanLines)
 
 	for scanner.Scan() {
-		c.Out <- scanner.Bytes()
+		go c.ParseAndSend(scanner.Bytes())
 	}
 	if err := scanner.Err(); err != nil {
 		log.Printf("%s", err)
+		c.Hub.Quit <- c
 	}
 
+}
+
+func (c *Client) Listen() {
+	for msg := range c.In {
+		c.Write(msg)
+	}
 }
