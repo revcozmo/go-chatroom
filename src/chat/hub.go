@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"log"
 	"sync"
 )
 
@@ -51,9 +52,6 @@ func (h *Hub) GetRoom(name string) *Room {
 //Safe register Room
 func (h *Hub) register(name string, c *Client) {
 
-	h.Lock.Lock()
-	defer h.Lock.Unlock()
-
 	if _, ok := h.Rooms[name]; ok {
 		h.Rooms[name].Clients[c.Name] = c
 	}
@@ -62,9 +60,6 @@ func (h *Hub) register(name string, c *Client) {
 //Safe unregister Room
 func (h *Hub) unregister(name string, c *Client) {
 
-	h.Lock.Lock()
-	defer h.Lock.Unlock()
-
 	if _, ok := h.Rooms[name].Clients[c.Name]; ok {
 		delete(h.Rooms[name].Clients, c.Name)
 	}
@@ -72,9 +67,7 @@ func (h *Hub) unregister(name string, c *Client) {
 
 //Safe new Room
 func (h *Hub) newRoom(name string) *Room {
-	h.Lock.Lock()
-	defer h.Lock.Unlock()
-
+	log.Printf("Room")
 	room := NewRoom(name)
 	h.Rooms[name] = room
 	h.RoomNotify.Broadcast()
@@ -84,18 +77,13 @@ func (h *Hub) newRoom(name string) *Room {
 
 //Safe destory Room
 func (h *Hub) destoryRoom(name string) {
-	h.Lock.Lock()
-	defer h.Lock.Unlock()
 	h.RoomNotify.Broadcast()
-
 	delete(h.Rooms, name)
 
 }
 
 func (h *Hub) quit(c *Client) {
 
-	h.Lock.Lock()
-	defer h.Lock.Unlock()
 	h.RoomNotify.Broadcast()
 
 	for _, r := range h.Rooms {
@@ -104,9 +92,8 @@ func (h *Hub) quit(c *Client) {
 }
 
 func (h *Hub) broadcast(msg Message) {
-
-	h.Lock.RLock()
-	defer h.Lock.RUnlock()
+	h.Lock.Lock()
+	defer h.Lock.Unlock()
 
 	for _, c := range h.Rooms[msg.RoomName].Clients {
 		c.In <- msg

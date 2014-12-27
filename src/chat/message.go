@@ -35,7 +35,7 @@ func toLittleUint32(b []byte) uint32 {
 func NewMessage(line []byte) Message {
 
 	spliter := []byte(" ")
-	data := bytes.SplitN(line, spliter, 2)
+	data := bytes.SplitN(line[4:], spliter, 2)
 	return Message{toLittleUint32(line[:4]),
 		string(data[0]),
 		data[1]}

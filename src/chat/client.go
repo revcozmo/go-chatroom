@@ -30,10 +30,13 @@ func (c *Client) Write(msg Message) {
 func (c *Client) ParseAndSend(line []byte) {
 
 	msg := NewMessage(line)
-
 	switch msg.Command {
 	case NORMAL:
 		c.Hub.Normal <- msg
+	case SETUP:
+		c.Hub.NewRoom <- *&RoomMessage{msg.RoomName, c}
+	case JOIN:
+		c.Hub.Register <- *&RoomMessage{msg.RoomName, c}
 	}
 
 }

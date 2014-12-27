@@ -5,14 +5,13 @@ from gevent import socket, spawn, joinall,sleep
 import sys
 import random
 import struct
-
-def ss_listen(s):
+import os
+def ss_send(s):
     while True:
         sleep(random.random()*3)
-        """
         msg = os.urandom(15).encode('hex')
-        s.send(struct.pack('<ii', 1, 0)+msg+'\n')
-        """
+        s.send(struct.pack('<i', 1) +"WORLD " +msg+'\n')
+
 def ss_recv(s):
     while True:
         data = s.recv(1024)
@@ -23,16 +22,16 @@ jobs = []
 
 print "Init WORLD"
 ss = socket.socket()
-ss.connect(('localhost', 12345))
-ss.send(struct.pack("<ii", 3, 0)+"a\n")
+ss.connect(('127.0.0.1', 12345))
+ss.send(struct.pack("<i", 3)+ "WORLD a\n")
 sleep(1)
 print "Connectting...",
-for x in xrange(10000):
+for x in xrange(3000):
 
     ss = socket.socket()
-    ss.connect(('localhost', 12345))
-    ss.send(struct.pack("<ii", 5, 0)+"a\n")
-    jobs.append(spawn(ss_listen, ss))
+    ss.connect(('127.0.0.1', 12345))
+    ss.send(struct.pack("<i", 5)+"WORLD a\n")
+    jobs.append(spawn(ss_send, ss))
     jobs.append(spawn(ss_recv, ss))
 
 print "Done"
