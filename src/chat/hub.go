@@ -66,13 +66,14 @@ func (h *Hub) unregister(name string, c *Client) {
 }
 
 //Safe new Room
-func (h *Hub) newRoom(name string) *Room {
-	log.Printf("Room")
-	room := NewRoom(name)
-	h.Rooms[name] = room
-	h.RoomNotify.Broadcast()
+func (h *Hub) newRoom(name string) {
 
-	return room
+	if _, ok := h.Rooms[name]; !ok {
+		log.Printf("New Room:%s", name)
+		room := NewRoom(name)
+		h.Rooms[name] = room
+		h.RoomNotify.Broadcast()
+	}
 }
 
 //Safe destory Room

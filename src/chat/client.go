@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"log"
 	"net"
+	"time"
 )
 
 type Client struct {
@@ -24,7 +25,10 @@ func NewClient(h *Hub, name string, conn net.Conn) *Client {
 
 func (c *Client) Write(msg Message) {
 
-	c.Conn.Write(msg.Content)
+	s := make([]byte, 29+len(msg.Content))
+	copy(s, []byte(time.Now().String()))
+	copy(s[29:], msg.Content)
+	c.Conn.Write(s)
 }
 
 func (c *Client) ParseAndSend(line []byte) {
