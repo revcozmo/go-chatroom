@@ -2,9 +2,10 @@
 package chat
 
 import (
+	"fmt"
 	"log"
-	"math/rand"
 	"net"
+	"os"
 )
 
 type ChatServer struct {
@@ -37,7 +38,11 @@ func (server *ChatServer) ListenAndServe() {
 			continue
 		}
 		go func() {
-			c := NewClient(server.Hub, string(rand.Uint32()), conn)
+			f, _ := os.Open("/dev/urandom")
+			b := make([]byte, 16)
+			f.Read(b)
+			f.Close()
+			c := NewClient(server.Hub, fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:]), conn)
 			go c.RecvFromConn()
 			go c.Listen()
 		}()

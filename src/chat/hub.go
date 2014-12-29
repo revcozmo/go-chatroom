@@ -40,20 +40,12 @@ func NewHub() *Hub {
 	}
 }
 
-//Safe get Room
-func (h *Hub) GetRoom(name string) *Room {
-
-	h.Lock.RLock()
-	defer h.Lock.RUnlock()
-
-	return h.Rooms[name]
-}
-
 //Safe register Room
 func (h *Hub) register(name string, c *Client) {
 
 	if _, ok := h.Rooms[name]; ok {
 		h.Rooms[name].Clients[c.Name] = c
+		log.Printf("%s has %d clients", name, len(h.Rooms[name].Clients))
 	}
 }
 
@@ -69,23 +61,19 @@ func (h *Hub) unregister(name string, c *Client) {
 func (h *Hub) newRoom(name string) {
 
 	if _, ok := h.Rooms[name]; !ok {
-		log.Printf("New Room:%s", name)
+		log.Printf("New Room: %s", name)
 		room := NewRoom(name)
 		h.Rooms[name] = room
-		h.RoomNotify.Broadcast()
 	}
 }
 
 //Safe destory Room
 func (h *Hub) destoryRoom(name string) {
-	h.RoomNotify.Broadcast()
-	delete(h.Rooms, name)
 
+	delete(h.Rooms, name)
 }
 
 func (h *Hub) quit(c *Client) {
-
-	h.RoomNotify.Broadcast()
 
 	for _, r := range h.Rooms {
 		h.unregister(r.Name, c)
@@ -93,6 +81,7 @@ func (h *Hub) quit(c *Client) {
 }
 
 func (h *Hub) broadcast(msg Message) {
+
 	h.Lock.Lock()
 	defer h.Lock.Unlock()
 
@@ -102,6 +91,8 @@ func (h *Hub) broadcast(msg Message) {
 }
 
 func (h *Hub) Serve() {
+	// we only run this loop in one hub
+	// which lock-free and no data race
 	for {
 		select {
 		case msg := <-h.NewRoom:

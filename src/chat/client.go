@@ -13,22 +13,24 @@ type Client struct {
 	Name string
 	Conn net.Conn
 
-	In chan Message
+	In         chan Message
+	BufferList chan []byte
 }
 
 func NewClient(h *Hub, name string, conn net.Conn) *Client {
 	return &Client{h,
 		name,
 		conn,
-		make(chan Message)}
+		make(chan Message),
+		make(chan []byte, 256)}
 }
 
-func (c *Client) Write(msg Message) {
+func (c *Client) msgToByte(msg Message) []byte {
 
 	s := make([]byte, 29+len(msg.Content))
 	copy(s, []byte(time.Now().String()))
 	copy(s[29:], msg.Content)
-	c.Conn.Write(s)
+	return s
 }
 
 func (c *Client) ParseAndSend(line []byte) {
@@ -51,7 +53,7 @@ func (c *Client) RecvFromConn() {
 	scanner.Split(bufio.ScanLines)
 
 	for scanner.Scan() {
-		go c.ParseAndSend(scanner.Bytes())
+		c.ParseAndSend(scanner.Bytes())
 	}
 	if err := scanner.Err(); err != nil {
 		log.Printf("%s", err)
@@ -61,7 +63,10 @@ func (c *Client) RecvFromConn() {
 }
 
 func (c *Client) Listen() {
-	for msg := range c.In {
-		c.Write(msg)
+	for {
+		select {
+		case msg := <-c.In:
+			c.Conn.Write(c.msgToByte(msg))
+		}
 	}
 }
