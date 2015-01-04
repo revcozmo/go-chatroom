@@ -7,6 +7,7 @@ import struct
 import time
 
 count = 0
+rps = 0
 
 def ss_recv(s):
     global count
@@ -15,22 +16,17 @@ def ss_recv(s):
         if len(data) == 0:
             sys.exit(1)
         count += 1
+        sys.stdout.write('\rMSG: {0:.2f} data: {1}'.format(rps, data))
+        sys.stdout.flush()
+
 
 def counter():
-    global count
-    previous_rps = 0
+    global count, rps
     while True:
         start_at = time.time()
         sleep(1)
         rps = count/(time.time()-start_at)
-        if previous_rps > rps:
-            flag = '-'
-        else:
-            flag = '+'
-        sys.stdout.write('\rMSG {0}: {1:.2f}'.format(flag,rps))
-        sys.stdout.flush()
         count = 0
-        previous_rps = rps
 
 jobs = []
 
