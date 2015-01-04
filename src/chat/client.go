@@ -21,7 +21,7 @@ func NewClient(h *Hub, name string, conn net.Conn) *Client {
 	return &Client{h,
 		name,
 		conn,
-		make(chan Message),
+		make(chan Message, 256),
 		make(chan []byte, 256)}
 }
 

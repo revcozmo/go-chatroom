@@ -43,7 +43,7 @@ ss = socket.socket()
 ss.connect(('127.0.0.1', 12345))
 ss.send(struct.pack("<i", 3)+ "WORLD a\n")
 sleep(1)
-CON = 4000
+CON = 1000
 print "Concurrent:%d -> %d msg/s" % (CON, CON/spread)
 for x in xrange(CON):
 

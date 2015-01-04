@@ -16,7 +16,7 @@ def ss_recv(s):
         if len(data) == 0:
             sys.exit(1)
         count += 1
-        sys.stdout.write('\rMSG: {0:.2f} data: {1}'.format(rps, data))
+        sys.stdout.write('\rMSG: {0:.2f} {1}\n'.format(rps, data))
         sys.stdout.flush()
 
 
